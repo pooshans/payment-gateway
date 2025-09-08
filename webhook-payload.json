@@ -1,0 +1,20 @@
+{
+    "notificationId": "test-notification-123",
+    "eventType": "net.authorize.payment.authcapture.created",
+    "eventDate": "2025-09-08T20:05:00Z",
+    "webhookId": "test-webhook-456",
+    "payload": {
+        "responseCode": 1,
+        "authCode": "ABC123",
+        "avsResponse": "Y",
+        "transId": "TEST987654321",
+        "refTransID": "",
+        "transHashSha2": "",
+        "accountType": "Visa",
+        "accountNumber": "XXXX1234",
+        "invoiceNumber": "INV-TEST-001",
+        "description": "Test transaction",
+        "amount": 100.00,
+        "currencyCode": "USD"
+    }
+}

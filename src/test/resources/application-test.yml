@@ -1,0 +1,36 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        "[format_sql]": true
+        "[show_sql]": true
+    database-platform: org.hibernate.dialect.H2Dialect
+  h2:
+    console:
+      enabled: true
+
+# Authorize.Net test credentials
+authorize.api:
+  login-id: test-api-login
+  transaction-key: test-transaction-key
+  environment: sandbox
+  connect-timeout: 5000
+  read-timeout: 30000
+
+# JWT test configuration
+jwt:
+  secret: testSecretKeyForJwtThatIsLongEnoughForHS256AlgorithmInDevelopmentEnvironment
+  expiration: 86400000 # 1 day in milliseconds
+
+# Disable actual metrics endpoints for testing
+management:
+  tracing:
+    sampling:
+      probability: 0.0

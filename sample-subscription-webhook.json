@@ -1,0 +1,33 @@
+{
+    "notificationId": "sample-notification-id-789012",
+    "eventType": "net.authorize.customer.subscription.created",
+    "eventDate": "2025-09-09T12:05:00Z",
+    "webhookId": "webhook-id-789012",
+    "payload": {
+        "subscription": {
+            "id": "SUB-sample-789012",
+            "name": "Premium Plan",
+            "status": "active",
+            "amount": 49.99,
+            "interval": {
+                "length": 1,
+                "unit": "months"
+            },
+            "startDate": "2025-09-09",
+            "nextBillingDate": "2025-10-09",
+            "totalOccurrences": 12,
+            "paymentMethod": {
+                "type": "creditCard",
+                "cardNumber": "XXXX1111",
+                "expirationDate": "2030-12"
+            },
+            "customer": {
+                "id": 1,
+                "email": "john.doe@example.com",
+                "firstName": "John",
+                "lastName": "Doe"
+            }
+        }
+    },
+    "signature": "sample-signature-789012"
+}

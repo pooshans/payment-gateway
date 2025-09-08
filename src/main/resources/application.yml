@@ -1,0 +1,86 @@
+spring:
+  application:
+    name: payment-gateway
+  profiles:
+    active: dev
+  jpa:
+    open-in-view: false
+  flyway:
+    locations: classpath:db/migration
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+# Authorize.Net Configuration (Sandbox)
+authorize:
+  api:
+    login-id: bizdev05
+    transaction-key: 4kJd237rZu59qAZd
+    environment: sandbox # sandbox or production
+    connect-timeout: 5000
+    read-timeout: 30000
+
+# Payment Gateway Configuration
+payment:
+  gateway:
+    webhook:
+      authorizenet:
+        signature-key: ${WEBHOOK_SIGNATURE_KEY:} # Set this in environment variables for security
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:verySecureJwtSecretForPaymentGatewayThatShouldBeAtLeast64CharsLongAndShouldBeSetAsEnvVariable}
+  expiration: 86400000 # 1 day in milliseconds
+
+# Actuator Configuration for metrics and health checks
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,loggers,env,flyway
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+      group:
+        readiness:
+          include: db, diskSpace, ping
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        "[http.server.requests]": true
+      percentiles:
+        "[http.server.requests]": 0.5, 0.9, 0.95, 0.99
+    enable:
+      jvm: true
+      process: true
+      system: true
+      http: true
+      logback: true
+  tracing:
+    sampling:
+      probability: 1.0
+    baggage:
+      correlation:
+        fields: ${management.tracing.propagation.keys:}
+      remote-fields: ${management.tracing.propagation.keys:}
+    propagation:
+      type: w3c
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    "[com.payment.gateway]": DEBUG
+    "[org.springframework.web]": INFO
+    "[org.hibernate]": INFO
+    "[net.authorize]": DEBUG

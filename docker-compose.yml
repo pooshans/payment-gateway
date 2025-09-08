@@ -1,0 +1,145 @@
+services:
+  # Payment Gateway Application
+  payment-gateway-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: payment-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      # Database configuration
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://payment-db:5432/paymentdb
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres
+      # Redis configuration
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      # Authorize.NET credentials
+      - AUTHORIZE_API_LOGIN_ID=${AUTHORIZE_API_LOGIN_ID}
+      - AUTHORIZE_API_TRANSACTION_KEY=${AUTHORIZE_API_TRANSACTION_KEY}
+      - AUTHORIZE_API_ENVIRONMENT=${AUTHORIZE_API_ENVIRONMENT:-SANDBOX}
+      # Security
+      - JWT_SECRET=${JWT_SECRET}
+      # Logging level
+      - LOGGING_LEVEL_ROOT=${LOGGING_LEVEL_ROOT:-INFO}
+      - LOGGING_LEVEL_COM_PAYMENT_GATEWAY=${LOGGING_LEVEL_APP:-INFO}
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      zipkin:
+        condition: service_started
+    volumes:
+      - payment-app-logs:/app/logs
+    networks:
+      - payment-network
+    healthcheck:
+      test: ["CMD", "/app/healthcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  payment-db:
+    image: postgres:14-alpine
+    container_name: payment-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=paymentdb
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - payment-db-data:/var/lib/postgresql/data
+    networks:
+      - payment-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      
+  # MySQL Database (alternative)
+  payment-mysql:
+    image: mysql:8.0
+    container_name: payment-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_DATABASE=paymentdb
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_USER=payuser
+      - MYSQL_PASSWORD=paypassword
+    volumes:
+      - payment-mysql-data:/var/lib/mysql
+    networks:
+      - payment-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Zipkin for distributed tracing
+  zipkin:
+    image: openzipkin/zipkin
+    container_name: zipkin
+    ports:
+      - "9411:9411"
+    networks:
+      - payment-network
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: payment-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-data:/data
+    networks:
+      - payment-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - payment-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+
+networks:
+  payment-network:
+    driver: bridge
+
+volumes:
+  payment-db-data:
+    driver: local
+  payment-mysql-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  redis-data:
+    driver: local
+  payment-app-logs:
+    driver: local

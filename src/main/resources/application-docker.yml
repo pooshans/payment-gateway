@@ -1,0 +1,63 @@
+# Docker environment configuration
+spring:
+  datasource:
+    url: jdbc:postgresql://${SPRING_DATASOURCE_HOST:payment-db}:${SPRING_DATASOURCE_PORT:5432}/${SPRING_DATASOURCE_DB:paymentdb}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        "[format_sql]": ${HIBERNATE_FORMAT_SQL:false}
+        "[show_sql]": ${HIBERNATE_SHOW_SQL:false}
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  flyway:
+    enabled: true
+    baselineOnMigrate: true
+  h2:
+    console:
+      enabled: false
+  # Redis configuration for caching and session management
+  redis:
+    host: ${SPRING_REDIS_HOST:redis}
+    port: ${SPRING_REDIS_PORT:6379}
+    timeout: 2000
+    
+logging:
+  level:
+    root: ${LOGGING_LEVEL_ROOT:INFO}
+    com.payment.gateway: ${LOGGING_LEVEL_APP:INFO}
+    
+# Override Zipkin configuration for Docker
+management:
+  zipkin:
+    tracing:
+      endpoint: http://zipkin:9411/api/v2/spans
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+        
+# Authorize.NET API Configuration
+authorize:
+  api:
+    login-id: ${AUTHORIZE_API_LOGIN_ID}
+    transaction-key: ${AUTHORIZE_API_TRANSACTION_KEY}
+    environment: ${AUTHORIZE_API_ENVIRONMENT:SANDBOX}
+    
+# Security Configuration
+security:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: ${JWT_EXPIRATION:86400000}
